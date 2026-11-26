@@ -7,8 +7,7 @@ FIND AND REPLACE THE FOLLOWING - From # to #
 ! Ephone 2 Mac: 	#ephone2macadd#
 ! YourPhone Mac:	#mym0bilemac#
 ! OtherPhone Mac:	#othm0bilemac#
-! SipPhone1:        #sip1macadd#
-! SipPhone2:        #sip2macadd#
+
 
 Know the following commands:
  - SR:		show run
@@ -34,7 +33,7 @@ Know the following commands:
  
 ************** Day 1 Configuration **************
  
-!@CoreTAAS
+!@coreTaas
 conf t
  hostname coreTaas-#$34T#
  enable secret pass
@@ -67,7 +66,7 @@ conf t
   desc VOICE-VLAN
  end
 
-!@CoreBABA
+!@coreBaba
 conf t
  hostname coreBaba-#$34T#
  enable secret pass
@@ -217,7 +216,7 @@ conf t
   ip add 10.#$34T#.100.8 255.255.255.0
  end
 
-!@analog & ephone SCCP
+!@alog & ephone
 conf t
  dial-peer voice 1 pots
   destination-pattern #$34T#00
@@ -372,7 +371,7 @@ conf t
  ip route 0.0.0.0 0.0.0.0 10.#$34T#.100.4 254
  end
 
-!@ospf routing CUCM
+!@ospf routing cucm
 conf t
 router ospf 1
 router-id 10.#$34T#.100.8
@@ -434,7 +433,7 @@ conf t
  no ip route 10.#$34T#.0.0 255.255.0.0 200.0.0.#$34T# 254
  end
 
-!@ospf routing EDGE
+!@ospf routing edge
 conf t
 router ospf 1
 router-id #$34T#.0.0.1
@@ -464,7 +463,7 @@ int gi 0/0/0
 ip ospf network point-to-point
 end
 
-!@CoreBABA
+!@coreBaba
 conf t
 router ospf 1
 router-id 10.#$34T#.#$34T#.4
@@ -473,7 +472,7 @@ int gi 0/1
 ip ospf network point-to-point
 end
 
-!@CUCM
+!@cucm
 conf t
 router ospf 1
 router-id 10.#$34T#.100.8
@@ -482,7 +481,7 @@ end
 
 ************** Trunking and Etherchannel **************
 
-!@CoreBABA, CoreTAAS
+!@coreBaba, coreTaas
 conf t
  int range fa0/10-12
   switchport trunk encapsulation dot1q
@@ -494,7 +493,7 @@ conf t
 
 ************** VOIP Services **************
 
-!@CUCM - Interactive Voice Response System
+!@cucm - Interactive Voice Response System
 config t
 dial-peer voice 69 voip
  service rivanaa out-bound
@@ -535,10 +534,11 @@ application
   end
 
 
-!@CUCM - Session Initiation Protocol
+!@cucm - Session Initiation Protocol
 conf t
  voice service voip
   allow-connections h323 to sip
+          
   allow-connections sip to h323
   allow-connections sip to sip
   supplementary-service h450.12
@@ -577,7 +577,7 @@ conf t
 
 ************** Modify Analog Phone Features **************
 
-!@CUCM
+!@cucm
 conf t
  voice-port 0/0/0
   signal loopstart
@@ -591,221 +591,10 @@ conf t
    end
  csim start #$34T#00
 
-!@CUCM
+!@cucm
 conf t
  class-map voip
   match ip dscp  ?
-
-
-************** SIP Phone CP-8851 Config **************
-
-!@CoreTAAS,CoreBABA
-conf t
- vlan 101
-  name SIP
-  exit
-
-!@CoreTAAS
-conf t
- int vlan 101
-  ip add 10.#$34T#.101.2 255.255.255.0
-  no shut
-  exit
- int range fa0/5,fa0/7
-  switchport mode access
-  switchport access vlan 1
-  switchport voice vlan 101
-  end
-
-!@CoreBABA
-conf t
- int vlan 101
-  ip add 10.#$34T#.101.4 255.255.255.0
-  no shut
-  exit
- ip dhcp pool excluded-address 10.#$34T#.101.1 10.#$34T#.101.100
- ip dhcp pool POOLSIP
-  network 10.#$34T#.101.0 255.255.255.0
-  default-router 10.#$34T#.101.4
-  domain-name VOICEDATA.COM
-  dns-server 10.#$34T#.1.10
-  option 150 ip 10.#$34T#.#$34T#.1
-  option 120 ip 10.#$34T#.#$34T#.1
- end
-
-!@EDGE/CSR - Communications Manager Express - SIP
-conf t
- ntp master 1
- !
- no ip tftp source-interface gi0
- ip tftp source-interface gi0/0/0
- !
- voice register global
-  mode cme
-  exit
- !
- voice service voip
-  allow-connections sip to sip
-  allow-connections h323 to sip
-  allow-connections sip to h323
-  supplementary-service h450.12
-  !
-  ip address trusted list
-   ipv4 0.0.0.0  0.0.0.0
-   exit
-  sip
-   silent-discard untrusted
-   header-passing
-   registrar server expires max 120 min 60
-   bind control source-interface Gi0/0/0
-   bind media source-interface Gi0/0/0
-   exit
-  exit
- voice register global
-  source-address 10.#$34T#.#$34T#.1 port 5060
-  max-dn 40
-  max-pool 12
-  authenticate register
-  ntp-server 10.#$34T#.#$34T#.1
-  create profile sync syncinfo.xml
-  exit
- voice register dn 1
-  number #$34T#110
-  name #$34T#1110
-  allow watch
- voice register dn 2
-  number #$34T#220
-  name #$34T#220
-  allow watch
- voice register dn 3
-  number #$34T#330
-  name #$34T#330
-  allow watch
- voice register dn 4
-  number #$34T#440
-  name #$34T#440
-  allow watch
- voice register dn 5
-  number #$34T#550
-  name #$34T#550
-  allow watch
- voice register dn 6
-  number #$34T#660
-  name #$34T#660
-  allow watch
- voice register dn 7
-  number #$34T#770
-  name #$34T#770
-  allow watch
- voice register dn 8
-  number #$34T#880
-  name #$34T#880
-  allow watch
- voice register dn 9
-  number #$34T#990
-  name #$34T#990
-  allow watch
- voice register dn 10
-  number #$34T#670
-  name #$34T#670
-  allow watch
- voice register dn 11
-  number #$34T#111
-  name #$34T#111
-  allow watch
- voice register dn 12
-  number #$34T#221
-  name #$34T#221
-  allow watch
- voice register dn 13
-  number #$34T#331
-  name #$34T#331
-  allow watch
- voice register dn 14
-  number #$34T#441
-  name #$34T#441
-  allow watch
- voice register dn 15
-  number #$34T#551
-  name #$34T#551
-  allow watch
- voice register dn 16
-  number #$34T#661
-  name #$34T#661
-  allow watch
- voice register dn 17
-  number #$34T#771
-  name #$34T#771
-  allow watch
- voice register dn 18
-  number #$34T#881
-  name #$34T#881
-  allow watch
- voice register dn 19
-  number #$34T#991
-  name #$34T#991
-  allow watch
- voice register dn 20
-  number #$34T#671
-  name #$34T#671
-  allow watch
-  exit
- !
- voice register pool 1
-  id mac #sip1macadd#
-  number 1 dn 1
-  number 2 dn 2
-  number 3 dn 3
-  number 4 dn 4
-  number 5 dn 5
-  number 6 dn 6
-  number 7 dn 7
-  number 8 dn 8
-  number 9 dn 9
-  number 10 dn 10
-  dtmf-relay rtp-nte
-  codec g711ulaw
-  username #$34T#Passa password #$34T#Passa
-  type 8851
- voice register pool 2
-  id mac #sip2macadd#
-  number 1 dn 11
-  number 2 dn 12
-  number 3 dn 13
-  number 4 dn 14
-  number 5 dn 15
-  number 6 dn 16
-  number 7 dn 17
-  number 8 dn 18
-  number 9 dn 19
-  number 10 dn 20
-  dtmf-relay rtp-nte
-  codec g711ulaw
-  username #$34T#Passb password #$34T#Passb
-  type 8851
-  exit
- voice register global
-  create profile sync syncinfo.xml
-  restart
-  apply-config
-end
-~~~
-
-Show Commands
-1. show voice register global
-2. show voice register pool
-3. show sip-ua register status
-4. show voice call summary
-5. show voice register tftp-bind
-
-
-SIP Flow operation
-1. Phone obtains IP from DHCP
-2. Phone discovers TFTP server
-3. Phone downloads XML config
-4. Phone sends SIP REGISTER to router
-5. Router authenticates phone
-6. Phone becomes available for calls
 
 ************** NAT with NAT0 **************
 
@@ -860,7 +649,7 @@ conf t
 
 !@edge
 conf t
- ip name-server 10.#$34T#.1.10   !8.8.8.8 8.8.4.4
+ ip name-server 8.8.8.8 8.8.4.4
  ip domain lookup
  ip domain lookup source-int g0/0/0
  end
@@ -923,12 +712,6 @@ conf t
  !
  no ip route 10.#$34T#.0.0 255.255.0.0 172.16.1.#$34T# 252
  end
-
-
-
-
-
-
 
 
 
