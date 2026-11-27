@@ -1,0 +1,490 @@
+
+!@Coretaas
+conf t
+	ip routing
+	int fa0/9
+	 no sw
+	 no shut
+	 ip add 192.168.56.60 255.255.255.192
+	end
+	
+!@Corebaba
+conf t	
+	ip routing
+	int fa0/9
+	 no sw
+	 no shut
+	 ip add 192.168.56.65 255.255.255.192
+	end
+	
+!@TASK 1: Configure a static host route from R1 to 10.1.1.5
+!@R1  
+conf t
+ ip route 10.1.1.5 255.255.255.255 10.1.1.2
+ end
+ ping 10.1.1.5
+ 
+conf t 
+ ip route 10.1.1.8 255.255.255.255 10.1.1.2
+ end
+ ping 10.1.1.6
+ 
+!@R3 RETURN TRAFFIC
+conf t 
+ ip route 10.1.1.0 255.255.255.255 10.1.1.5
+ end
+ ping 10.1.1.1
+
+!@R2
+conf t 
+ ip route 10.1.1.8 255.255.255.255 10.1.1.6
+ end
+ ping 10.1.1.10
+ 
+!@R3
+conf t 
+ ip route 10.1.1.0 255.255.255.255 10.1.1.10
+ end
+ ping 10.1.1.1
+
+!@TO DELETE CONFIG PUT no in config 
+
+!@R4
+ conf t 
+ ip route 10.1.1.0 255.255.255.255 10.1.1.9
+ end
+ ping 10.1.1.1
+ 
+ 
+EIGRP
+!@C1
+config t
+ router eigrp 100
+  network 10.2.1.0       0.0.0.255
+  network 10.2.2.0       0.0.0.255
+  network 192.168.1.128  0.0.0.31
+  network 10.1.4.4       0.0.0.3
+  end
+  
+!@C2
+config t
+ router eigrp 100
+  network 10.2.1.0       0.0.0.255
+  network 10.2.2.0       0.0.0.255
+  network 192.168.1.128  0.0.0.31
+  network 10.1.4.8       0.0.0.3
+  end
+  
+ !@R1
+ config t
+  router eigrp 100
+   network 10.0.15.64 0.0.0.31
+   network 172.16.160.0 0.7.255
+   network 172.16.97.111 0.0.0.0
+   end
+   
+ !@R2
+ config t
+  router eigrp 100
+   network 10.46.187.22 0.0.0.0
+   network 10.0.15.64 0.0.0.31
+   network 192.168.0.152 0.0.0.3
+   end
+   
+!@P1 create gateway fr P1 to google ip
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.2.1.1
+ end
+ 
+++++++++++++++++++++++++++++
+Day 4
+IPv6
+
+Excercise 1: Subnet for 8 offices using network address fd00:1::/64
+
+C: 8 offices = 3 bits
+A: /64 + 3 bits = /67  (5 butas, 1st Hex, 2i)
+I:
+	fd00:0001:0000:0000:0000:0000:0000:0000
+		1st office:    :0000:
+		2nd office:    :2000:
+		3rd office:    :4000:
+		up to 
+		8 office:      :e000:
+
+ex 2: Subnet for 4 offices using network address fd00:2::/88
+using the 3rd office:
+	apply the 1st valid ip on R1
+	apply the last valid ip on R2
+C: 4 offices = 2 bits
+A /88 + 2 bits = /90 (6th butas, 3rd hex, 4i)
+I:
+	fd00:0002:0000:0000:0000:0000:0000:0000
+						1st :0000
+							:0040
+							:0080
+				  4th office:00C0
+		
+3rd office network: fd00:0002:0000:0000:0000:0080:0000:0000 /90
+First valid ip add: fd00:0002:0000:0000:0000:0080:0000:0001 /90 //plus 1 network
+Last valid ip add:  fd00:0002:0000:0000:0000:00bf:ffff:ffff /90 //minus 1 network
+not network: 		fd00:0002:0000:0000:0000:00c0:0000:0000 /90
+
+
+!@I4
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  no shut
+  ipv6 add fd00:2::80:0:1/90
+  end
+ 
+!@R4
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  no shut
+  ipv6 add fd00:2::bf:ffff:ffff/90
+  end
+ ping fd00:2::80:0:1
+ 
+ 
+//bits counting starts at 16bits + 16bits until sobra na sa given subnet
+exercise 3: Subnet for 52 offices using network address fd00:3:0:33::/112
+Determine the 6th subnet
+
+C: 52 = 6bits
+A: /112 + 6 bits = /118 (8th butas, 2nd hex, 4i)
+I: 				fd00:0003:0000:0033:0000:0000:0000:0000 /112
+											1st	  :0000:
+												  :0400:
+												  :0800:
+												  :0c00:
+												  :1000:
+											 6th  :1400:/112
+												  
+	network: fd00:0003:0000:0033:0000:0000:0000:1400
+	1st valid: fd00:0003:0000:0033:0000:0000:0000:1401   //PLUS NETWORK
+	last valid: fd00:0003:0000:0033:0000:0000:0000:17ff  //MINUS NOT 	
+	not: fd00:0003:0000:0033:0000:0000:0000:1800
+	
+	NON anycast: fd00:0003:0000:0033:0000:0000:0000:177f
+	FIRST anycast: fd00:0003:0000:0033:0000:0000:0000:1780
+	
+
+!@I1 GOOGLE
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  no shut
+  ipv6 add fd00:3:0:33::17ff/118
+  end
+
+!@R4 
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  no shut
+  ipv6 add fd00:3:0:33::1401/118
+  end
+  
+ Unicast : One is to One
+ Multicast: one to Many
+ Broadcast: One to All
+ Anycast: One to the Nearest 
+ Last Anycast Address - /120 and below :Last 128 IPs
+ 
+ Exercise 4: Subnet for 182 offices using the network address fd00:4::/100
+ Determine the 3rd subnet
+ 
+ 2 raise 2 to get the bits //ipv6 only
+ C:182 = 8bits
+ A:/100 + 8 = 108 (7th octet, 3rd hex, 1i)
+ I:
+				fd00:0004:0000:0000:0000:0000:0000:0000 /108
+											 :0000:
+											 :0010:
+											 :0020:
+											 :0030: //not net
+	network:    fd00:0004:0000:0000:0000:0000:0020:0000 /108
+	first:      fd00:0004:0000:0000:0000:0000:0020:0001 /108
+	non any:	fd00:0004:0000:0000:0000:0000:002f:ff7f /108  //non any = 7f last 2, constant no change
+	first any:	fd00:0004:0000:0000:0000:0000:002f:ff80 /108  //non any = 80 last 2 , constant no change
+	last any:	fd00:0004:0000:0000:0000:0000:002f:ffff /108
+	
+	not net:    fd00:0004:0000:0000:0000:0000:0030:0000
+											 
+											 
+
+
+!@cmd
+	netstat -s -p tcp
+	netstat -n -p tcp
+	
+	net use \\10.k.1.10\ipc$
+	net use x: /delete
+	net use x: \\10.k.1.10\c$
+											 
+											 
+
+port:   69- ftp
+		2000 - cisco to cisco
+		5060 - sip (phones, ip phones)
+		
+!@CoreBABA
+conf t
+ monitor session 1 source interface fa0/3, fa0/5, fa0/7
+ monitor session 1 destination interface fa0/1, fa0/9
+ end
+ 
+ 
+ TELNET
+ ADMIN
+ PASS
+ 102.11 PH
+ 102.12 JP
+ 
+ 
+ip domain lookup
+ip name-server 8.8.8.8
+
+Pornhub 	66.254.114.41
+Redtube 	66.254.114.41
+Faketaxi 	66.254.114.234
+Bangbros 	66.254.114.234
+PinayFlix 	104.21.55.88
+xhamster  	104.16.3.81
+Sulasok   	172.67.159.23
+iyottube	208.77.20.35
+chaturbate	104.19.162.95
+
+
+!@UTM-PH
+config t
+ no ip access-list standard NOPORN
+ ip access-list standard NOPORN
+  deny 66.254.114.0	 0.0.0.255
+  deny 104.0.0.0 	 0.255.255.255
+  deny 172.67.159.23 0.0.0.0
+  deny host 208.77.20.35
+  permit any
+ int gi 1
+  ip access-group NOPORN in
+  end
+show ip access-list int g1
+
+!@UTM-PH REMOVE ATTACHED ACL
+conf t
+ int gi 1
+ no ip access-list standard NOPORN
+ end
+ 
+ 
+ Block schools - create firewall that block the ff:
+ 
+ www.dlsu.edu.ph    172.66.161.211
+ www.ccp.edu.ph		50.6.160.47
+ www.feu.edu.ph		184.168.125.216
+ www.ue.edu.ph		155.137.92.102
+ 
+ 
+config t
+ no ip access-list standard noschool
+ ip access-list standard noschool
+  deny 172.66.161.211	0.0.0.0
+  deny 104.20.42.168 	0.0.0.0
+  deny 50.6.160.47 	 	0.0.0.0
+  deny 184.168.125.216 	0.0.0.0
+  deny host 155.137.92.102
+  permit any
+ int gi 1
+  ip access-group noschool in
+  end
+show ip access-list int g1
+
+
+nmap -v www.neu.edu.ph
+nmap -v www.sti.edu.ph
+nmap -v www.dpwh.gov.ph
+
+
+
+ http, https, ping, ssh, dns
+ 80		443	  icmp	22	 53
+Formula:
+|  PROTOCOL       |  HACKER  |  VICTIM  |  PORT         |
+| ---             | ---      | ---      | ---           |
+| TCP/UDP/ICMP/IP |   ANY    |          |  Dest.Port eq |
+
+!@UTM-PH
+conf t
+ no ip access-list extended FWP4
+ ip access-list extended FWP4
+ permit tcp Any host www.bet100.com eq 80 log
+ permit tcp Any host www.bet100.com eq 443 log
+ permit icmp Any host www.bet100.com log
+ permit tcp Any host www.bet100.com eq 22 log
+ permit tcp Any host www.bet100.com eq 53 log
+ Int gi 3
+	no ip access-group FWP4 in
+ int gi 1
+	ip access-group FWP4 in
+  end
+ ===============================================
+sccp= 2000
+sip 5060
+imap 143
+smtp 25 (secure)
+pop3 110
+ftp 21 (secure)
+tftp 69
+ntp 123
+
+  
+### Remember Ports
+Create an access-list named FWP6 to open the following ports:  
+www.bet100.com open only sccp, sip, imap, smtp, pop3, ftp, tftp, ntp
+
+~~~
+!@UTM-PH
+conf t
+ no ip access-list extended FWP6
+ ip access-list extended FWP6
+ permit tcp Any host www.bet100.com eq 2000 log
+ permit tcp Any host www.bet100.com eq 5060 log
+ permit tcp Any host www.bet100.com eq 143 log
+ permit tcp Any host www.bet100.com eq 25 log
+ permit tcp Any host www.bet100.com eq 110 log
+ permit tcp Any host www.bet100.com eq 21 log
+ permit udp Any host www.bet100.com eq 69 log
+  permit udp Any host www.bet100.com eq 123 log
+ Int gi 1
+  ip access-group FWP6 in
+  end
+  show run | s int
+~~~
+
+
+telnet 10.32.1.2
+
+
+HOW TO ESTABLISH SECURE CONNECTION
+Public Key
+
+!@UTM-PH
+conf t
+ hostname CTAAS-SEC
+ ip domain name ccna.sec
+ crypto key generate rsa
+ 
+ ip ssh version 2
+ line vty 0 14
+  login local
+  transport input all
+  username admin privilege 15 secret pass
+  end
+  
+  
+ ============= Day 4 ==============
+ root
+ C1sc0123
+ ip addr 
+ 
+ 1yearXP:
+ http://208.8.8.133/otrs/customer.pl 
+ 
+ 
+ 3uXP:
+ http://208.8.8.133/otrs/index.pl 
+ admin
+ C1sc0123
+ 1. create company
+ 2. create acc
+ 3. service: [NOC} Enterprise Switch Deployment
+ 4. customer user -> service
+ 
+ CHATGPT PROMPT
+Write a complete ITSM using otsr/zhuny on the how to MSP/NOC
+ 
+  
+cisco to non cisco //show lldp neighbor
+cisco to cisco  	// show cdp neighbor
+
+
+@TAAS/PLDTinternet:
+config t
+hostname coretaasPLDT
+Track 1 Int gi 0/1 line-protocol
+Int vlan 1
+standby 1 ip 10.32.1.6
+standby 1 preempt
+standby 1 Priority 150
+standby 1 Track 1 decrement 60
+
+
+COREBABA/GLOBE:
+config t
+hostname corebabaGLOBE
+Int vlan 1
+standby 1 ip 10.32.1.6
+standby 1 preempt
+standby 1 Priority 100
+end
+
+onCiscoFirewall
+config t
+logging on
+logging host 208.8.8.133 transport udp port 9001
+logging trap informational
+end
+!-------
+config t
+archive
+log config
+logging enable
+notify syslog
+end
+!-------------
+config t
+login on-failure log
+login on-success log
+end
+
+
+How to run elk at home:
+root
+C1sc0123
+systemctl restart elasticsearch.service
+
+https://208.8.8.133:5601
+admin
+C1sc0123
+
+
+CISCO AND ELK STACK INTEGRATION
+
+config t
+NO ip access-list standard NOPORN
+ip access-list standard NOPORN
+DENY 66.254.0.0 0.0.255.255 log
+deny 161.49.0.0 0.0.255.255 log
+DENY 104.21.0.0 0.0.255.255 log
+DENY 68.235.0.0 0.0.255.255 log
+DENY 104.17.0.0 0.0.255.255 log
+DENY 88.208.0.0 0.0.255.255 log
+DENY 208.77.0.0 0.0.255.255 log
+DENY 172.67.0.0 0.0.255.255 log
+Permit Any
+Int Gi 1
+ ip access-group NOPORN in
+end
+
+BUILD AS STEP BY STEP ITSM USING OTRS FOR NETWORK AND CYBER SECURITY
+INCLUDING TICKET, SLA, CAB, SERVICE, ETC.
+
+
+HOW TO PASS TO CCNA IN 1 MONTH
+
+
+
+
